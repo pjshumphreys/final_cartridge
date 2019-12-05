@@ -44,10 +44,10 @@ _disable_rom:
 .global _disable_rom_set_01
 _disable_rom_set_01:
     rts
-.global _load_FILENAME_indy
-_load_FILENAME_indy:
+.global _load_FNADR_indy
+_load_FNADR_indy:
         dec     $01
-        lda     (FILENAME),y
+        lda     (FNADR),y
         inc     $01
         rts
 
