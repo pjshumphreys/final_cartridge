@@ -44,7 +44,7 @@ test: fc3.bin
 	@diff -u fc3-orig.bin.hexdump fc3.bin.hexdump
 
 fc3.bin: $(OBJECTS) core/fc3.cfg
-	$(LD) -C core/fc3.cfg $(OBJECTS) -o $@
+	$(LD) -Ln test.lbl -C core/fc3.cfg $(OBJECTS) -o $@
 
 monitor.prg: core/monitor.o projects/monitor/monitor_support.o projects/monitor/monitor.cfg
 	$(LD) -C projects/monitor/monitor.cfg core/monitor.o projects/monitor/monitor_support.o -o $@ -Ln labels.txt

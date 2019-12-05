@@ -84,40 +84,6 @@ L805A:  sta     $02,y
         pla ; $ D
         tax
         pla
-        cpx     #$7F ; $DC01 value
-        beq     L80C4 ; 1988-13 changes this to "bne" to start into BASIC
-        cpx     #$DF
-        beq     go_desktop
-        and     #$7F
-        beq     go_desktop
-        ldy     #mg87_signature_end - mg87_signature - 1
-L809D:  lda     $CFFC,y
-        cmp     mg87_signature,y
-        bne     L80AA
-        dey
-        bpl     L809D
-        bmi     go_desktop ; MG87 found
-L80AA:  jmp     ($A000)
-
-mg87_signature:
-        .byte   "MG87"
-mg87_signature_end:
-
-go_desktop:
-        lda     #$80 ; bar on
-        sta     bar_flag
-        jsr     $E3BF ; init BASIC, print banner
-        lda     #>(desktop_entry - 1)
-        pha
-        lda     #<(desktop_entry - 1)
-        pha
-        lda     #$42 ; bank 2
-        jmp     _jmp_bank ; jump to desktop
-
-L80C4:  ldx     #'M'
-        cpx     $CFFC
-        bne     go_basic
-        dec     $CFFC ; destroy signature
 go_basic:
         ldx     #<$A000
         ldy     #>$A000

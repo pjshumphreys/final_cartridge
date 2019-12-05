@@ -33,7 +33,7 @@ jentry:
         jmp     entry
 
 ; this vector is called from other banks
-        jmp     perform_operation_for_desktop
+        jmp     go_basic;perform_operation_for_desktop
 
 .global jfast_format
 jfast_format: ; monitor calls this

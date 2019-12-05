@@ -757,7 +757,8 @@ new_basic_keywords:
         .byte   "MO", 'N' + $80
         .byte   "PDI", 'R' + $80
         .byte   "PLIS", 'T' + $80
-        .byte   "BA", 'R' + $80
+        .byte   "CL", 'S' + $80
+;        .byte   "BA", 'R' + $80
         .byte   "DESKTO", 'P' + $80
         .byte   "DUM", 'P' + $80
         .byte   "ARRA", 'Y' + $80
@@ -789,7 +790,7 @@ command_vectors:
         .word   MON-1
         .word   PDIR-1
         .word   PLIST-1
-        .word   BAR-1
+        .word   $e544-1 ;clear screen
         .word   DESKTOP-1
         .word   DUMP-1
         .word   ARRAY-1
@@ -1208,13 +1209,13 @@ MON:    bne     L89BC
 ; ----------------------------------------------------------------
 ; "BAR" Command - enable/disable pull-down menu
 ; ----------------------------------------------------------------
-BAR:    tax
-        lda     #0 ; bar off
-        cpx     #$CC
-        beq     L89CB ; OFF
-        lda     #$80 ; bar on
-L89CB:  sta     bar_flag
-        jmp     WA8F8
+;BAR:    tax
+;        lda     #0 ; bar off
+;        cpx     #$CC
+;        beq     L89CB ; OFF
+;        lda     #$80 ; bar on
+;L89CB:  sta     bar_flag
+;        jmp     WA8F8
 
 ; ----------------------------------------------------------------
 ; "DESKTOP" Command - start Desktop
@@ -1231,9 +1232,10 @@ L89D8:  lda     $DC00
         beq     L89D8
         cmp     #$59
         beq     L89EC
+L89EC:
         rts
 
-L89EC:  jmp     go_desktop
+;L89EC:  jmp     go_desktop
 
 print_msg:
         lda     a_are_you_sure,x
@@ -1252,7 +1254,7 @@ a_ready: ; XXX this is only used by desktop_helper.s, it should be defined there
 ; ----------------------------------------------------------------
 ; "DLOAD" Command - load a program from disk
 ; ----------------------------------------------------------------
-DLOAD:  
+DLOAD:
         lda     #0 ; load flag
         .byte   $2C
 ; ----------------------------------------------------------------
@@ -1563,7 +1565,7 @@ do_detokenize:
         stx     $22
         ldx     #>new_basic_keywords
         bne     L8C31
-        
+
 L8C2B:  ldx     #<basic_keywords
         stx     $22
         ldx     #>basic_keywords
