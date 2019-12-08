@@ -207,3 +207,13 @@ _int_to_ascii: ; $DEE4
         jsr     $BC49 ; FLOAT UNSIGNED VALUE IN FAC+1,2
         jsr     $BDDD ; convert FAC to ASCII
         jmp     _enable_rom
+
+.global _search_for_line
+_search_for_line: ; $DF0F
+        jsr     move_and_run_code
+        jsr     $A613 ; search for BASIC line
+        php
+        jsr     _enable_rom
+        plp
+        rts
+

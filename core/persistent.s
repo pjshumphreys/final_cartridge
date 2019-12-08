@@ -161,12 +161,6 @@ LDEFF:  iny
         jsr     $BDD7 ; print FAC
         jmp     _enable_rom
 
-.global _search_for_line
-_search_for_line: ; $DF0F
-        jsr     _disable_rom
-        jsr     $A613 ; search for BASIC line
-        jmp     LDF21
-
 .global _CHRGET
 _CHRGET: ; $DF1B
         jsr     _disable_rom
@@ -210,13 +204,18 @@ _new_clrch: ; $DFD5
         jsr     _enable_rom
         jmp     new_clrch
 
-.global LDFE0
-LDFE0: ; XXX BUG ???
-.global _bar_irq
-_bar_irq: ; XXX BUG ???
-        lda     #$40 ; bank 2 (Desktop, Freezer/Print)
-        sta     $DFFF
-        jmp     $FCE2
+.global irqVec
+irqVec:
+  jsr _disable_rom
+  jmp $FF48
+.global nmiVec
+nmiVec:
+  jsr _disable_rom
+  jmp $FE43
+.global resetVec
+resetVec:
+  jsr _disable_rom
+  jmp $FCE2
 
 .global _a_colon_asterisk
 _a_colon_asterisk:

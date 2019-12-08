@@ -13,49 +13,13 @@
 
 .segment "freezer"
 
-freezer:
-        sei
-        pha
-        lda     $00
-        pha
-        lda     #$2F
-        sta     $00 ; default value of processor port DDR
-        lda     $01
-        ora     #$20 ; cassette motor off - but don't store
-        pha
-        lda     #$37
-        sta     $01 ; processor port defaut value
-        lda     #$13
-        sta     $DFFF ; NMI = 1, GAME = 1, EXROM = 0
-        lda     $DC0B ; CIA 1 TOD hours
-        lda     $DD0B ; CIA 2 TOD hours (???)
-        txa
-        pha ; save X
-        tya
-        pha ; save Y
-        lda     $02A1 ; RS-232 interrupt enabled
-        pha
-        ldx     #10
-LBFC7:  lda     $02,x ; copy $02 - $0C onto stack
-        pha
-        dex
-        bpl     LBFC7
-        lda     $DD0E ; CIA 2 Timer A Control
-        pha
-        lda     $DD0F ; CIA 2 Timer B Control
-        pha
-        lda     #0
-        sta     $DD0E ; disable CIA 2 Timer A
-        sta     $DD0F ; disable CIA 2 Timer B
-        lda     #$7C
-        sta     $DD0D ; disable some NMIs? (???)
-        ldx     #3
-        jmp     LDFE0 ; ???
-
 .segment "freezer_vectors"
+.import nmiVec
+.import resetVec
+.import irqVec
 
 ; catch IRQ, NMI, RESET
-        .word freezer ; NMI
-        .word freezer ; RESET
-        .word freezer ; IRQ
+  .word nmiVec   ; NMI vector
+  .word resetVec   ; RESET vector
+  .word irqVec   ; IRQ/BRK vector
 

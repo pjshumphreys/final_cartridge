@@ -1020,5 +1020,4 @@ LA9F6:  dex
         rts
 
 ; XXX junk
-;        sei
-;        rts
+  .byte $FF,$FF

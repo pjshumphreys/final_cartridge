@@ -1620,7 +1620,6 @@ L8C68:  jsr     L8C92
 ; ----------------------------------------------------------------
 
 set_irq_and_kbd_handlers:
-        jsr     set_irq_handler
         lda     #<_kbd_handler
         ldx     #>_kbd_handler
 L8C78:  sei
@@ -1632,11 +1631,6 @@ L8C78:  sei
         cli
         rts
 
-set_irq_handler:
-        lda     #<_bar_irq
-        ldx     #>_bar_irq
-        bit     bar_flag
-        bmi     L8C96 ; bar on
 L8C92:  lda     #<$EA31
         ldx     #>$EA31
 L8C96:  sei
