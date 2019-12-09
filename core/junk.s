@@ -141,6 +141,12 @@ _lda_5f_indy: ; $DF38
         lda     ($5F),y
         jmp     _enable_rom
 
+.global _sbc_5f_indy
+_sbc_5f_indy: ; $DF38
+        jsr     move_and_run_code
+        sbc     ($5F),y
+        jmp     _enable_rom
+
 .global _lda_ae_indx
 _lda_ae_indx: ; $DF40
         jsr     move_and_run_code

@@ -454,6 +454,179 @@ L9BED:  iny
 L9BF7:  jmp     L9B3D
 
 ; ----------------------------------------------------------------
+                A1L      :=     $5A;$2A;$3C        ;MOVE source start
+                A1H      :=     $5B;$3D
+                A2L      :=     $FB;$3E        ;MOVE source end
+                A2H      :=     $FC;$3F
+                A4L      :=     $FD;$42        ;MOVE dest start
+                A4H      :=     $FE;$43
+
+                STREND   :=     $31 ; $6D        ;Ptr to end of vars
+                LOWTR    :=     $5F ; $9B        ;GETARYPT puts address here
+                ;CHRGET   :=     $73 ; $B1        ;Get next token
+                ; doesn't exist in c64. build it outselves  11   GETARYPT =     $F7D9      ;Find array in memory
+                ; doesn't exist in c64. build it outselves 12   MOVE     =     $FE2C      ;Block move
+                ARYTAB := $2F
+                VARNAM := $45
+                ERROR := disable_rom_jmp_error ;$A437
+                ERR_NODATA := $0D
+
+ISLETC:
+  CMP #$41  ; "A"
+  BCC ISLRTS          ;IF LESS THAN "A", RET.
+  SBC #$5B  ; "Z"+1
+  SEC
+  SBC #$A5  ; 256-"Z"-1       ;RESET CARRY IF [A] .GT. "Z".
+ISLRTS:
+  RTS                     ;RETURN TO CALLER.
+
+.import _lda_5f_indy
+.import _sbc_5f_indy
+.global ERASE
+ERASE:
+  STA VARNAM
+  JSR _CHRGOT
+  JSR ISLETC
+  BCS LB09F
+LB09C:
+  LDX #$0B
+  JMP disable_rom_jmp_error
+
+LB09F:
+  LDX #$00
+  STX $0D
+  STX $0E
+  JSR _CHRGET
+  BCC LB0AF
+  JSR ISLETC
+  BCC LB0BA
+LB0AF:
+  TAX
+LB0B0:
+  JSR _CHRGET
+  BCC LB0B0
+  JSR ISLETC
+  BCS LB0B0
+LB0BA:
+  CMP #$24   ; $
+  BNE LB0C4
+  LDA #$FF
+  STA $0D
+  BNE LB0D4
+LB0C4:
+  CMP #$25   ; %
+  BNE LB0DB
+  LDA $10
+  BNE LB09C
+  LDA #$80
+  STA $0E
+  ORA VARNAM
+  STA VARNAM
+LB0D4:
+  TXA
+  ORA #$80
+  TAX
+  JSR _CHRGET
+LB0DB:
+  STX VARNAM+1
+
+GETARYPT:
+    ldx     ARYTAB          ;(A,X) = start of array table
+    lda     ARYTAB+1
+LE16D:
+    stx     LOWTR           ;use LOWTR for running pointer
+    sta     LOWTR+1
+    cmp     STREND+1        ;did we reach the end of arrays yet?
+    bne     LE179           ;no, keep searching
+    cpx     STREND
+    beq     MAKE_NEW_ARRAY  ;yes, this is a new array name
+LE179:
+    ldy     #$00            ;point at 1st char of array name
+    jsr     _lda_5f_indy    ;lda     (LOWTR),y       ;get 1st char of name
+    iny                     ;point at 2nd char
+    cmp     VARNAM          ;1st char same?
+    bne     LE188           ;no, move to next array
+    jsr     _lda_5f_indy
+    sta     $02
+    lda     VARNAM+1        ;yes, try 2nd char
+    cmp     $02             ;same?
+    beq     USE_OLD_ARRAY   ;yes, array found
+LE188:
+    ldy     #$02            ;point at offset to next array
+    jsr     _lda_5f_indy    ;lda     (LOWTR),y       ;add offset to running pointer
+    clc
+    adc     LOWTR
+    tax
+    iny
+    jsr     _lda_5f_indy    ;lda     (LOWTR),y
+    adc     LOWTR+1
+    bcc     LE16D           ;...always
+
+.import disable_rom_jmp_error
+MAKE_NEW_ARRAY:
+    ldx     #ERR_NODATA     ;yes, give "out of data" error
+    jmp     disable_rom_jmp_error
+
+USE_OLD_ARRAY:
+    ;jmp LB24D
+    sec                     ;signal array found
+;    rts
+
+    LDY   #2         ;Offset to array len
+    LDA   LOWTR
+    STA   A4L
+    CLC
+    jsr   _lda_5f_indy    ;LDA   (LOWTR),Y  ;Next array address -> MOVE src start
+    ADC   LOWTR
+    STA   A1L
+    LDA   LOWTR+1
+    STA   A4H
+    INY
+    php
+    jsr   _lda_5f_indy    ;LDA   (LOWTR),Y
+    plp
+    ADC   LOWTR+1
+    STA   A1H
+    SEC
+    LDA   STREND     ;ALSO CORRECT THE END
+    STA   A2L        ;OF VARIABLES POINTER
+    DEY
+    jsr   _sbc_5f_indy
+    STA   STREND
+    LDA   STREND+1
+    STA   A2H
+    INY
+    jsr   _sbc_5f_indy    ;LDA   (LOWTR),Y
+    STA   STREND+1
+    LDY   #0
+;    JMP   MOVE       ;GO MOVE AND RETURN
+
+MOVE:
+    ;LDA (A1L),Y ; MOVE (A1 TO A2) TO
+    .global _lda_5a_indy
+    jsr _lda_5a_indy
+    STA (A4L),Y ; (A4)
+;    JSR NXTA4 ;(fcb4)
+
+NXTA4:
+    INC A4L ;INCR 2-BYTE A4
+    BNE NXTA1 ;AND A1
+    INC A4H
+NXTA1:
+    LDA A1L ;INCR 2-BYTE A1.
+    CMP A2L
+    LDA A1H ;AND COMPARE TO A2
+    SBC A2H
+    INC A1L ;(CARRY SET IF &gt=)
+    BNE RTS4B
+    INC A1H
+RTS4B:
+;    RTS
+
+
+    BCC MOVE
+    RTS
+
 
 .segment "drive_code_load" ; $0400
 

@@ -329,7 +329,7 @@ L8327:  cmp     #$CC ; first new token
         sec
 L832C:  jmp     _execute_statement
 
-L832F:  cmp     #$E9 ; last new token + 1
+L832F:  cmp     #$EA ; last new token + 1
         bcs     L832C
         sbc     #$CB
         asl     a
@@ -758,7 +758,6 @@ new_basic_keywords:
         .byte   "PDI", 'R' + $80
         .byte   "PLIS", 'T' + $80
         .byte   "CL", 'S' + $80
-;        .byte   "BA", 'R' + $80
         .byte   "DESKTO", 'P' + $80
         .byte   "DUM", 'P' + $80
         .byte   "ARRA", 'Y' + $80
@@ -770,8 +769,10 @@ new_basic_keywords:
         .byte   "UNPAC", 'K' + $80
         .byte   "MREA", 'D' + $80
         .byte   "MWRIT", 'E' + $80
+        .byte   "ERAS", 'E' + $80
         .byte 0
 
+.import ERASE
 command_vectors:
         .word   OFF-1
         .word   AUTO-1
@@ -802,6 +803,8 @@ command_vectors:
         .word   UNPACK-1
         .word   MREAD-1
         .word   MWRITE-1
+        .word   ERASE-1
+
 
 ; ----------------------------------------------------------------
 ; "MREAD" Command - read 192 bytes from RAM into buffer
