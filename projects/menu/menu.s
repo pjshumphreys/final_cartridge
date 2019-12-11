@@ -33,8 +33,8 @@ printChar:
 
 getChar:
   lda #$00
-  sta $cc        ; Force cursor to flash
-  LDA #$80  ;disable shift character set
+  sta $cc     ; Force cursor to flash
+  LDA #$80    ; disable shift character set
   STA $0291
   cli         ; Re-enable IRQ interrupts
 
@@ -43,7 +43,7 @@ getChar2:
   cmp #$31
   beq fc3b
   cmp #$32
-  beq quit
+  beq simons
   cmp #$33
   beq cbmb
   cmp #$34
@@ -51,6 +51,9 @@ getChar2:
   cmp #$35
   beq geos
   jmp getChar2
+
+simons:
+  jmp simons2
 
 fc3b:
   jsr $ffd2      ; print the character we found
@@ -69,6 +72,8 @@ cbmb:
   lda #3
   jsr waitForNoKey
   sei
+  lda #0
+  sta $8004
   lda #$FC
   pha
   lda #$E1
@@ -81,7 +86,6 @@ geos:
   lda #5
   jsr waitForNoKey
   sei
-
   lda #$8d ; sta
   sta $02
   lda #$FF
@@ -103,11 +107,6 @@ quit2:
   sei
   jmp quit2
 
-IRQ:
-  JSR $FFEA   ; do clock
-  jmp $ea38
-
-
 waitForNoKey:
   sei
   tay
@@ -127,18 +126,100 @@ waitForNoKey2:
   beq waitForNoKey2
   rts
 
+simons2:
+  jsr $ffd2      ; print the character we found
+  lda #2
+  jsr waitForNoKey
+  sei
+  lda #0
+  ldy #15
+
+copyTrampoline:
+  lda copyRomFoo-1, y
+  sta $02a6, y
+  dey
+  bne copyTrampoline
+
+  ;copy the 16k
+  lda #0
+  sta $fb
+  sta $fd
+  lda #$80
+  sta $fc
+  sta $fe
+
+copyRom:
+  jsr $2a7  ;lda ($fb), y; sta($fd), y
+  dey
+  bne copyRom
+  inc $fc
+  inc $fe
+  lda $fc
+  cmp #$c0
+  beq copyHiRom
+  jmp copyRom
+
+copyHiRom:
+  lda #$a0
+  sta $fc
+
+  ;copy the 4k to $c000
+copyHiRom2:
+  lda ($fb), y
+  sta ($fd), y
+  dey
+  bne copyHiRom2
+  ldy #0
+  inc $fc
+  inc $fe
+  lda $fe
+  cmp #$d0
+  beq startRom
+  jmp copyHiRom2
+
+startRom:
+  lda #$4c ; jmp
+  sta $02AC
+  lda #$71
+  sta $02AD
+  lda #$81
+  sta $02AE
+  lda #$80
+  sta $0284
+  lda #6
+  sta $D020
+  lda #15
+  sta $D021
+  lda #0
+  sta $0283
+  sta $0286
+  sta $0287
+  sta $0291 ; enable shift character set
+  lda #$71
+  jmp $02A9 ;soft reset the machine
+
+  ;this is copied to $2a7 and run from there
+copyRomFoo:
+  lda #3
+  sta $dfff
+  lda ($fb), y
+  sta ($fd), y
+  lda #1
+  sta $dfff
+  rts
+
 filterTable:
   .byte %01111111
-  .byte $ff
+  .byte %01111111
   .byte %11111101
-  .byte $ff
+  .byte %11111101
   .byte %11111011
 
 filterTableA:
   .byte %00000001
-  .byte $ff
+  .byte %00001000
   .byte %00000001
-  .byte $ff
+  .byte %00001000
   .byte %00000001
 
 menuText:
@@ -169,7 +250,7 @@ LDE08:  sta     $DFFF
         rts
 
 .segment "himem"
-.byte $ff
+.incbin "page3a.bin"
 
 .segment "ultimax"
 nmiVec:
