@@ -3,7 +3,10 @@
 menu:
   ldx #$ff
   CLD             ; clear direction flag
+  txs
   STX $D016       ; sets bit 5 (MCM) off, bit 3 (38 cols) off
+  lda #$15
+  sta $d018
   JSR $FDA3       ; initialise I/O
   JSR $FD15       ; set I/O vectors ($0314..$0333) to kernal defaults
   jsr $FF81       ; CINT   - Init VIC and screen editor
@@ -47,13 +50,16 @@ getChar2:
   cmp #$33
   beq cbmb
   cmp #$34
-  beq quit
+  beq copySL
   cmp #$35
   beq geos
   jmp getChar2
 
 simons:
   jmp simons2
+
+geos:
+  jmp geos2
 
 fc3b:
   jsr $ffd2      ; print the character we found
@@ -81,7 +87,74 @@ cbmb:
   lda #$70
   jmp $DF00 ;soft reset the machine
 
-geos:
+copySL:
+  jsr $ffd2      ; print the character we found
+  lda #4
+  jsr waitForNoKey
+  sei
+  lda #0
+  sta $fb
+  sta $fd
+  lda #>swiftlink
+  sta $fc
+  lda #08
+  sta $fe
+  ldy #$ff
+
+copySL2:
+  lda ($fb), y
+  sta ($fd), y
+  dey
+  bne copySL2
+  inc $fc
+  inc $fe
+  lda $fc
+  cmp #$12
+  beq copySL3
+  jmp copySL2
+
+copySL3:
+  LDX #$FF        ;
+  SEI             ; set interrupt disable
+  TXS             ; transfer .X to stack
+  CLD             ; clear direction flag
+  JSR $FDA3       ; initialise I/O
+  JSR $FD15       ; set I/O vectors ($0314..$0333) to kernal defaults
+  JSR $FF5B       ; more initialising... mostly set system IRQ to correct value and start
+
+  lda #11
+  sta $D020
+  lda #0
+  sta $D021
+  lda #15
+  sta $0286
+  sta $0287
+
+  lda #$8d
+  sta $02A7
+  lda #$ff
+  sta $02A8
+  lda #$df
+  sta $02A9
+
+  lda #$a9
+  sta $02Aa
+  lda #$41
+  sta $02Ab
+
+  lda #$4c
+  sta $02Ac
+  lda #$61
+  sta $02Ad
+  lda #$09
+  sta $02Ae
+
+  lda #$70
+  clc
+  cli
+  jmp $02a7 ;soft reset the machine
+
+geos2:
   jsr $ffd2      ; print the character we found
   lda #5
   jsr waitForNoKey
@@ -184,17 +257,19 @@ startRom:
   sta $02AD
   lda #$81
   sta $02AE
-  lda #$80
-  sta $0284
   lda #6
   sta $D020
   lda #15
   sta $D021
   lda #0
-  sta $0283
   sta $0286
   sta $0287
   sta $0291 ; enable shift character set
+  lda $BA
+  sta $be
+  lda #$80
+  sta $38
+
   lda #$71
   jmp $02A9 ;soft reset the machine
 
@@ -223,7 +298,7 @@ filterTableA:
   .byte %00000001
 
 menuText:
-  .byte $0D, $0D
+  .byte $93, $0D, $0D
   .byte "    cHOOSE AN OPTION:-", $0D, $0D, $0D
   .byte "    1 - fINAL cARTRIDGE iii bASIC", $0D, $0D
   .byte "    2 - tUNED sIMONS' bASIC", $0D, $0D
@@ -231,6 +306,11 @@ menuText:
   .byte "    4 - sWIFTlINK-232 fILE tRANSFER", $0D, $0D
   .byte "    5 - bOOT geos", $0D, $0D, $0D
   .byte "    eNTER OPTION NUMBER (1 - 5): ", $00
+
+.align 256
+swiftlink:
+.byte $ff
+.incbin "swiftlink.bin"
 
 .segment "fc_vectors"
 _jmp_bank:
