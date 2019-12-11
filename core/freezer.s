@@ -12,9 +12,20 @@
 .include "persistent.i"
 
 .segment "freezer"
+nmiVec:
+  sei
+  lda #$2F
+  sta 0
+  lda #$37
+  sta 1
+  lda #$7F
+  pha
+  lda #$FF
+  pha
+  lda #1
+  jmp $DF00
 
 .segment "freezer_vectors"
-.import nmiVec
 .import resetVec
 .import irqVec
 

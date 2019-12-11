@@ -38,34 +38,46 @@
 
 .segment        "romio"
 
-LDE00:  .byte   $40
-
 .global _jmp_bank
 _jmp_bank:
         sta     $DFFF
         rts
 
-.global _enable_rom
-_enable_rom: ; $DE05
-        pha
-        lda     #$40 ; bank 0
-LDE08:  sta     $DFFF
-        pla
-        rts
-
 .global _disable_rom_set_01
 _disable_rom_set_01:; $DE0D
         sty     $01
+
 .global _disable_rom
 _disable_rom: ; $DE0F
         pha
         lda     #$70 ; no ROM at $8000; BASIC at $A000
-        bne     LDE08
+LDE08:  sta     $DFFF
+        pla
+        rts
+
+.global irqVec
+irqVec:
+  pha
+  lda #40
+  sta $DFFF
+  pla
+  jmp $FF48
+
+.global resetVec
+resetVec:
+  jsr _disable_rom
+  jmp $FCE2
 
 enable_all_roms:
         ora     #$07
         sta     $01
         bne     _enable_rom
+
+.global _enable_rom
+_enable_rom: ; $DE05
+        pha
+        lda     #$40 ; bank 0
+        bne     LDE08
 
 .global _new_load
 _new_load: ; $DE20
@@ -203,19 +215,6 @@ _new_clall: ; $DFCF
 _new_clrch: ; $DFD5
         jsr     _enable_rom
         jmp     new_clrch
-
-.global irqVec
-irqVec:
-  jsr _disable_rom
-  jmp $FF48
-.global nmiVec
-nmiVec:
-  jsr _disable_rom
-  jmp $FE43
-.global resetVec
-resetVec:
-  jsr _disable_rom
-  jmp $FCE2
 
 .global _a_colon_asterisk
 _a_colon_asterisk:

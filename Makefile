@@ -41,16 +41,22 @@ clean:
 test: fc3.bin
 	@dd if=bin/Final_Cartridge_3_1988-12.bin bs=16384 count=1 2> /dev/null | hexdump -C > fc3-orig.bin.hexdump
 	@hexdump -C fc3.bin > fc3.bin.hexdump
-	@diff -u fc3-orig.bin.hexdump fc3.bin.hexdump
+	@diff -u fc3-orig.bin.hexdump fc3.bin.hexdump | sort
 
 fc3.bin: $(OBJECTS) core/fc3.cfg
-	$(LD) -Ln test.lbl -C core/fc3.cfg $(OBJECTS) -o $@
+	$(LD) -C core/fc3.cfg $(OBJECTS) -o $@
 
 monitor.prg: core/monitor.o projects/monitor/monitor_support.o projects/monitor/monitor.cfg
 	$(LD) -C projects/monitor/monitor.cfg core/monitor.o projects/monitor/monitor_support.o -o $@ -Ln labels.txt
 
 speeder.prg: core/speeder.o projects/speeder/speeder_support.o projects/speeder/speeder.cfg
 	$(LD) -C projects/speeder/speeder.cfg core/speeder.o projects/speeder/speeder_support.o -o $@
+
+menu.prg: projects/menu/menu.o projects/menu/menu.cfg
+	$(LD) -C projects/menu/menu.cfg projects/menu/menu.o -o $@
+
+menu.bin: projects/menu/menu.o projects/menu/menu2.cfg
+	$(LD) -Ln menu.lbl -C projects/menu/menu2.cfg projects/menu/menu.o -o $@
 
 %.o: %.s $(DEPS)
 	$(AS) $(ASFLAGS) $< -o $@
