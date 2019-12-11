@@ -49,7 +49,7 @@ getChar2:
   cmp #$34
   beq quit
   cmp #$35
-  beq quit
+  beq geos
   jmp getChar2
 
 fc3b:
@@ -59,7 +59,7 @@ fc3b:
   sei
   lda #$FC
   pha
-  lda #$E2
+  lda #$E1
   pha
   lda #0
   jmp $DF00 ;soft reset the machine
@@ -71,10 +71,31 @@ cbmb:
   sei
   lda #$FC
   pha
-  lda #$E2
+  lda #$E1
   pha
-  lda #$38
+  lda #$70
   jmp $DF00 ;soft reset the machine
+
+geos:
+  jsr $ffd2      ; print the character we found
+  lda #5
+  jsr waitForNoKey
+  sei
+
+  lda #$8d ; sta
+  sta $02
+  lda #$FF
+  sta $03
+  lda #$DF
+  sta $04
+  lda #$4c ; jmp
+  sta $05
+  lda #$00
+  sta $06
+  lda #$80
+  sta $07
+  lda #$42
+  jmp $02 ;soft reset the machine
 
 quit:
   jsr $ffd2
@@ -111,14 +132,14 @@ filterTable:
   .byte $ff
   .byte %11111101
   .byte $ff
-  .byte $ff
+  .byte %11111011
 
 filterTableA:
   .byte %00000001
   .byte $ff
   .byte %00000001
   .byte $ff
-  .byte $ff
+  .byte %00000001
 
 menuText:
   .byte $0D, $0D
