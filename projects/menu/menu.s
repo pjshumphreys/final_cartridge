@@ -114,45 +114,33 @@ copySL2:
   jmp copySL2
 
 copySL3:
-  LDX #$FF        ;
-  SEI             ; set interrupt disable
-  TXS             ; transfer .X to stack
-  CLD             ; clear direction flag
-  JSR $FDA3       ; initialise I/O
-  JSR $FD15       ; set I/O vectors ($0314..$0333) to kernal defaults
-  JSR $FF5B       ; more initialising... mostly set system IRQ to correct value and start
-
   lda #11
   sta $D020
-  lda #0
-  sta $D021
   lda #15
   sta $0286
   sta $0287
-
-  lda #$8d
-  sta $02A7
-  lda #$ff
-  sta $02A8
-  lda #$df
-  sta $02A9
-
-  lda #$a9
-  sta $02Aa
-  lda #$41
-  sta $02Ab
-
-  lda #$4c
-  sta $02Ac
-  lda #$61
-  sta $02Ad
-  lda #$09
-  sta $02Ae
-
+  lda #$08
+  sta $49
+  sta $ba
+  lda #0
+  sta $D021
+  ldx #0
+startup3:
+  lda startup, x
+  sta $8000, x
+  inx
+  cpx #$fe
+  bcc startup3
+  lda #<$EA31
+  sta $0314
+  lda #>$EA31
+  sta $0315
+  lda #$FC
+  pha
+  lda #$E1
+  pha
   lda #$70
-  clc
-  cli
-  jmp $02a7 ;soft reset the machine
+  jmp $DF00 ;soft reset the machine
 
 geos2:
   jsr $ffd2      ; print the character we found
@@ -270,7 +258,7 @@ startRom:
   lda #$80
   sta $38
 
-  lda #$71
+  lda #$50 ; no nmi
   jmp $02A9 ;soft reset the machine
 
   ;this is copied to $2a7 and run from there
@@ -308,6 +296,41 @@ menuText:
   .byte "    eNTER OPTION NUMBER (1 - 5): ", $00
 
 .align 256
+startup:
+  .byte $09, $80, $bc, $82, $c3, $c2, $cd, $38, $30
+  stx $d016
+  jsr $fda3
+  ;jsr $fd50
+  ldx #0
+startup2:
+  lda basicSize-$300, x
+  sta $2b, x
+  inx
+  cpx #$08
+  bne startup2
+  lda #$52
+  sta $277
+  lda #$55
+  sta $278
+  lda #$4e
+  sta $279
+  lda #$0d
+  sta $27a
+  lda #$41
+  sta $030c
+  lda #0
+  sta $030d
+  sta $030e
+  sta $030f
+  ldx #$04
+  stx $c6
+  jmp $E3bf
+
+basicSize:
+  .byte $01, $08, $4e, $1b, $4e, $1b, $4e, $1b
+
+.align 256
+
 swiftlink:
 .byte $ff
 .incbin "swiftlink.bin"

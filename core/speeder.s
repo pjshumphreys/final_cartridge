@@ -454,6 +454,7 @@ L9BED:  iny
 L9BF7:  jmp     L9B3D
 
 ; ----------------------------------------------------------------
+.segment "romio2"
                 A1L      :=     $5A;$2A;$3C        ;MOVE source start
                 A1H      :=     $5B;$3D
                 A2L      :=     $FB;$3E        ;MOVE source end
@@ -470,6 +471,7 @@ L9BF7:  jmp     L9B3D
                 VARNAM := $45
                 ERROR := disable_rom_jmp_error ;$A437
                 ERR_NODATA := $0D
+.byte $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
 
 ISLETC:
   CMP #$41  ; "A"
