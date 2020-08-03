@@ -36,14 +36,14 @@ OBJECTS=$(SOURCES:.s=.o)
 all: fc3.bin
 
 clean:
-	rm -f core/*.o projects/monitor/*.o projects/speeder/*.o *.bin *.prg *.hexdump
+	rm -f core/*.o projects/monitor/*.o projects/speeder/*.o projects/menu/*.o fc3.bin page0.bin page1.bin *.lbl *.prg *.hexdump
 
 test: fc3.bin
 	@dd if=bin/Final_Cartridge_3_1988-12.bin bs=16384 count=1 2> /dev/null | hexdump -C > fc3-orig.bin.hexdump
 	@hexdump -C fc3.bin > fc3.bin.hexdump
 	@diff -u fc3-orig.bin.hexdump fc3.bin.hexdump | sort
 
-fc3.bin: $(OBJECTS) core/fc3.cfg
+page0.bin: $(OBJECTS) core/fc3.cfg
 	$(LD) -C core/fc3.cfg $(OBJECTS) -o $@
 
 monitor.prg: core/monitor.o projects/monitor/monitor_support.o projects/monitor/monitor.cfg
@@ -55,8 +55,11 @@ speeder.prg: core/speeder.o projects/speeder/speeder_support.o projects/speeder/
 menu.prg: projects/menu/menu.o projects/menu/menu.cfg
 	$(LD) -C projects/menu/menu.cfg projects/menu/menu.o -o $@
 
-menu.bin: projects/menu/menu.o projects/menu/menu2.cfg
+page1.bin: projects/menu/menu.o projects/menu/menu2.cfg
 	$(LD) -Ln menu.lbl -C projects/menu/menu2.cfg projects/menu/menu.o -o $@
+
+fc3.bin: $(OBJECTS) page0.bin page1.bin page2.bin page3.bin
+	cat page0.bin page1.bin page2.bin page3.bin > fc3.bin
 
 %.o: %.s $(DEPS)
 	$(AS) $(ASFLAGS) $< -o $@

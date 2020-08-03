@@ -112,7 +112,7 @@ cond_init_load_save_vectors:
         ldy     #$1F
 L80EE:  lda     $0314,y
         cmp     $FD30,y
-        bne     return ; rts
+        bne     L810F ; rts
         dey
         bpl     L80EE
 
@@ -123,5 +123,7 @@ L80FE:  lda     load_save_vectors,y ; overwrite LOAD and SAVE vectors
         sta     $0330,y
         dey
         bpl     L80FE
-return:
-        rts
+        lda     $02A6
+        beq     L810F
+        inc     $0330
+L810F:  rts

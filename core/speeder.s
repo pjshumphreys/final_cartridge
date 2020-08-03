@@ -14,29 +14,26 @@ L0110           := $0110
 .segment "speeder_a"
 .res 10,$ff
 new_load:
-  jmp new_load2
+	jmp new_load2
 new_save:
-  jmp new_save2
+	jmp new_save2
 
 send_byte:
         pha
-loc_9907:
-        bit     $DD00
-        bpl     loc_9907
+ :      bit     $DD00
+        bpl     :-
         lsr     a
         lsr     a
         lsr     a
         lsr     a
         tax
-loc_9911:
-        lda     $D012
+:       lda     $D012
         cmp     #$31
-        bcc     loc_991E
+        bcc     :+
         and     #$06
         cmp     #$02
-        beq     loc_9911
-loc_991E:
-        lda     #$07
+        beq     :-
+:       lda     #$07
         sta     $DD00
         lda     iec_tab,x
         nop
@@ -68,17 +65,16 @@ iec_tab:
 .assert >* = >iec_tab, error, "Page boundary!"
 
 receive_4_bytes:
-        lda     $02A6   ; PAL or NTSC?
+        lda     $0330   ; PAL or NTSC?
+        cmp     #<_new_load
         beq     L998B
-loc_9962:
         ; PAL
-        bit     $DD00
-        bvs     loc_9962
+:       bit     $DD00
+        bvs     :-
         ldy     #3
         nop
         ldx     $01
-loc_996C:
-        lda     $DD00
+:       lda     $DD00
         lsr     a
         lsr     a
         nop
@@ -96,8 +92,8 @@ loc_996C:
         ora     $DD00
         sta     $C1,y
         dey
-        bpl     loc_996C
-.assert >* = >receive_4_bytes, error, "Page boundary!"
+        bpl     :-
+.assert >* = >:-, error, "Page boundary!"
         rts
 
 L998B:  bit     $DD00
@@ -133,11 +129,10 @@ L9995:  ;NTSC
 L99B5:  tax
         beq     L99C3
         ldx     #$16
-loc_99BA:
-        lda     L9A50,x
+:       lda     L9A50,x
         sta     L0110,x
         dex
-        bpl     loc_99BA
+        bpl     :-
 L99C3:  jmp     LA851
 ; *** tape
 
@@ -229,10 +224,9 @@ L9A50:  lda     #$0C
         sta     $01
         lda     ($C3),y
         cmp     $BD
-        beq     loc_9A5C
+        beq     :+
         stx     ST
-loc_9A5C:
-        eor     $D7
+:       eor     $D7
         sta     $D7
         lda     #$0F
         sta     $01
@@ -323,9 +317,9 @@ L9AF0:  jsr     UNTALK
         ldy     #>__drive_code_load_LOAD__
         ldx     #>__drive_code_load_RUN__ ; $0400
         jsr     transfer_code_to_drive
-        lda     #$9A
+        lda     #<L059A
         jsr     IECOUT
-        lda     #$5
+        lda     #>L059A
         jsr     IECOUT
         jsr     UNLSTN
         sei
@@ -389,9 +383,8 @@ L9B78:  lda     #$40
 L9B82:  bvs     L9B3D
         lda     #$20
         sta     $DD00
-loc_9B89:
-        bit     $DD00
-        bvc     loc_9B89
+:       bit     $DD00
+        bvc     :-
         lda     #0
         sta     $DD00
         jsr     receive_4_bytes
@@ -471,7 +464,6 @@ L9BF7:  jmp     L9B3D
                 VARNAM := $45
                 ERROR := disable_rom_jmp_error ;$A437
                 ERR_NODATA := $0D
-.byte $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff
 
 ISLETC:
   CMP #$41  ; "A"
@@ -630,18 +622,447 @@ RTS4B:
     RTS
 
 
+.global go_desktop
+go_desktop:
+  sei
+  lda #$8d ; sta
+  sta $02
+  lda #$FF
+  sta $03
+  lda #$DF
+  sta $04
+  lda #$4c ; jmp
+  sta $05
+  lda #$00
+  sta $06
+  lda #$80
+  sta $07
+  lda #$42
+  jmp $02 ;soft reset the machine
+
+
 .segment "drive_code_load" ; $0400
 
 drive_code_load:
-.incbin "drive_load.bin"
+        lda     $43
+        sta     $C1
+L9BFE:  jsr     L0582
+L9C01:  bvc     L9C01
+        clv
+        lda     $1C01
+        sta     $25,y
+        iny
+        cpy     #7
+        bne     L9C01
+        jsr     $F556
+L9C12:  bvc     L9C12
+        clv
+        lda     $1C01
+        sta     ($30),y
+        iny
+        cpy     #5
+        bne     L9C12
+        jsr     $F497
+        ldx     #5
+        lda     #0
+L9C26:  eor     $15,x
+        dex
+        bne     L9C26
+        tay
+        beq     L9C31
+L9C2E:  jmp     $F40B
+
+L9C31:  inx
+L9C32:  lda     $12,x
+        cmp     $16,x
+        bne     L9C2E
+        dex
+        bpl     L9C32
+        jsr     $F7E8
+        ldx     $19
+        cpx     $43
+        bcs     L9C2E
+        lda     $53
+        sta     L060F,x
+        lda     $54
+        sta     L05FA,x
+        lda     #$FF
+        sta     L0624,x
+        dec     $C1
+        bne     L9BFE
+        lda     #1
+        sta     $C3
+        ldx     $09
+L9C5D:  lda     $C2
+        sta     L0624,x
+        inc     $C2
+        lda     L060F,x
+        cmp     $08
+        bne     L9C75
+        lda     L05FA,x
+        tax
+        inc     $C3
+        bne     L9C5D
+        beq     L9C2E
+L9C75:  cmp     #$24
+        bcs     L9C2E
+        sta     $08
+        lda     L05FA,x
+        sta     $09
+L9C80:  jsr     L0582
+        iny
+L9C84:  bvc     L9C84
+        clv
+        lda     $1C01
+        sta     ($30),y
+        iny
+        cpy     #4
+        bne     L9C84
+        ldy     #0
+        jsr     $F7E8
+        ldx     $54
+        cpx     $43
+        bcs     L9C2E
+        lda     L0624,x
+        cmp     #$FF
+        beq     L9C80
+        stx     $C0
+        jsr     $F556
+L9CA8:  bvc     L9CA8
+        clv
+        lda     $1C01
+        sta     ($30),y
+        iny
+        bne     L9CA8
+        ldy     #$BA
+L9CB5:  bvc     L9CB5
+        clv
+        lda     $1C01
+        sta     $0100,y
+        iny
+        bne     L9CB5
+        jsr     $F7E8
+        lda     $53
+        beq     L9CCC
+        lda     #0
+        sta     $54
+L9CCC:  sta     $34
+        sta     $C1
+        ldx     $C0
+        lda     $0624,x
+        sta     $53
+        lda     #$FF
+        sta     L0624,x
+        jsr     $F6D0
+        lda     #$42
+        sta     $36
+        ldy     #$08
+        sty     $1800
+L9CE8:  lda     $1800
+        lsr     a
+        bcc     L9CE8
+        ldy     #0
+L04F6:
+        dec     $36
+        sty     $1800
+        bne     L9CFE
+        dec     $C3
+        bne     L9C80
+        jmp     $F418
+
+L9CFE:  ldy     $C1
+        lda     ($30),y
+        lsr     a
+        lsr     a
+        lsr     a
+        sta     $5C
+        lda     ($30),y
+        and     #$07
+        sta     $5D
+        iny
+        bne     L9D15
+        iny
+        sty     $31
+        ldy     #$BA
+L9D15:  lda     ($30),y
+        asl     a
+        rol     $5D
+        asl     a
+        rol     $5D
+        lsr     a
+        lsr     a
+        lsr     a
+        sta     $5A
+        lda     ($30),y
+        lsr     a
+        iny
+        lda     ($30),y
+        rol     a
+        rol     a
+        rol     a
+        rol     a
+        rol     a
+        and     #$1F
+        sta     $5B
+        lda     ($30),y
+        and     #$0F
+        sta     $58
+        iny
+        lda     ($30),y
+        asl     a
+        rol     $58
+        lsr     a
+        lsr     a
+        lsr     a
+        sta     $59
+        lda     ($30),y
+        asl     a
+        asl     a
+        asl     a
+        and     #$18
+        sta     $56
+        iny
+        lda     ($30),y
+        rol     a
+        rol     a
+        rol     a
+        rol     a
+        and     #$07
+        ora     $56
+        sta     $56
+        lda     ($30),y
+        and     #$1F
+        sta     $57
+L0564:
+        iny
+        sty     $C1
+        ldy     #$08
+        sty     $1800
+        ldx     $55,y
+:       lda     L05CA - 8,x ; ???
+        sta     $1800
+        lda     L05DA,x
+        ldx     $54,y
+        sta     $1800
+        dey
+        bne     :-
+        jmp     L04F6
+
+L0582:
+        ldx     #3
+        stx     $31
+L9D80:  inx
+        bne     L9D86
+        jmp     $F40B
+
+L9D86:  jsr     $F556
+L9D89:  bvc     L9D89
+        clv
+        lda     $1C01
+        cmp     $24
+        bne     L9D80
+        rts
+
+L059A:
+        ldx     #$00
+        stx     $1800
+        stx     $C2
+        lda     $19
+        sta     $09
+        lda     $18
+        sta     $08
+L9DA3:  lda     #$E0
+        sta     $01
+L9DA7:  lda     $01
+        bmi     L9DA7
+        cmp     #2
+        bcs     L9DBB
+        lda     $08
+        bne     L9DA3
+        lda     #$02
+        sta     $1800
+        jmp     $C194
+
+L9DBB:  inx
+        ldy     #$0A
+        sty     $1800
+        jmp     $E60A
+
+L05CA:
+        .byte   0, 10, 10, 2
+        .byte   0, 10, 10, 2
+        .byte   0, 0, 8, 0
+        .byte   0, 0, 8, 0
+L05DA:
+        .byte   0, 2, 8, 0
+        .byte   0, 2, 8, 0
+        .byte   0, 8, 10, 10, 0, 0, 2, 2
+        .byte   0, 0, 10, 10, 0, 0, 2, 2
+        .byte   0, 8, 8, 8
+        .byte   0, 0, 0, 0
+L05FA:
+L060F := L05FA + 21
+L0624 := L060F + 21
 
 ; ----------------------------------------------------------------
 ; drive code $0500
 ; ----------------------------------------------------------------
 .segment "drive_code_save"
 
+ram_code := $0150
+
 drive_code_save:
-.incbin "drive_save.bin"
+        lda     L0612
+        tax
+        lsr     a
+        adc     #3
+        sta     $95
+        sta     $31
+        txa
+        adc     #6
+        sta     $32
+LA510:  jsr     receive_byte
+        beq     :+
+        sta     $81
+        tax
+        inx
+        stx     L0611
+        lda     #0
+        sta     $80
+        beq     LA534
+
+:       lda     $02FC
+        bne     :+
+        lda     $02FA ; XXX ORing the values together is shorter
+        bne     :+
+        lda     #$72
+        jmp     $F969 ; DISK FULL
+
+:       jsr     $F11E ; find and allocate free block
+LA534:  ldy     #0
+        sty     $94
+        lda     $80
+        sta     ($94),y
+        iny
+        lda     $81
+        sta     ($94),y
+        iny
+LA542:  jsr     L0564
+        sta     ($30),y
+        iny
+        cpy     L0611
+        bne     LA542
+        jsr     ram_code
+        inc     $B6
+        ldx     L0612
+        lda     $81
+        sta     $07,x
+        lda     $80
+        cmp     $06,x
+        beq     LA510
+        sta     $06,x
+        jmp     $F418 ; set OK code
+
+receive_byte:
+        lda     #$00
+        sta     $1800
+        lda     #$04
+:       bit     $1800
+        bne     :-
+        sta     $C0
+drive_code_save_timing_selfmod1:
+        sta     $C0
+        lda     $1800
+        asl     a
+        nop
+        nop
+        ora     $1800
+        asl     a
+        asl     a
+        asl     a
+        asl     a
+        sta     a:$C0 ; 16 bit address for timing!
+        lda     $1800
+        asl     a
+        nop
+L0589:
+        nop
+L058A:
+        ora     $1800
+        and     #$0F
+        ora     $C0
+        sta     $C0
+        lda     #$02
+        sta     $1800
+        lda     $C0
+        rts
+L0589_end:
+        nop ; filler, gets overwritten when L0589 gets copied down by 1 byte
+
+L059C:
+        lda     #$EA
+        sta     drive_code_save_timing_selfmod1
+        sta     drive_code_save_timing_selfmod1 + 1 ; insert 1 cycle into code
+        ldx     #L0589_end - L0589 - 1
+LA5A6:  lda     L0589,x
+        sta     L058A,x ; insert 3 cycles into code
+        dex
+        bpl     LA5A6
+L05AF:
+        ldx     #$64
+LA5B1:  lda     $F575 - 1,x; copy "write data block to disk" to RAM
+        sta     ram_code - 1,x
+        dex
+        bne     LA5B1
+        lda     #$60
+        sta     ram_code + $64 ; add RTS at the end, just after GCR decoding
+        inx
+        stx     $82
+        stx     $83
+        jsr     $DF95
+        inx
+        stx     $1800
+LA5CB:  inx
+        bne     LA5CB
+        sta     L0612 + 1
+        asl     a
+        sta     L0612
+        tax
+        lda     #$40
+        sta     $02F9
+LA5DB:  lda     $06,x
+        beq     LA5FA
+        sta     $0A
+        lda     #$E0
+        sta     $02
+LA5E5:  lda     $02
+        bmi     LA5E5
+        cmp     #2
+        bcc     LA5DB
+        cmp     #$72
+        bne     LA5F4
+        jmp     $C1C8 ; set error message
+
+LA5F4:  ldx     L0612 + 1
+        jmp     $E60A
+
+LA5FA:  ldx     #L0608_end - L0608
+LA5FC:  lda     L0608 - 1,x
+        sta     ram_code - 1,x
+        dex
+        bne     LA5FC
+        jmp     ram_code
+
+L0608:
+        jsr     $DBA5 ; write directory entry
+        jsr     $EEF4 ; write BAM
+        jmp     $D227 ; close channel
+L0608_end:
+
+L0611:
+        .byte   0
+L0612:
+
 
 ; ----------------------------------------------------------------
 ; C64 IEC code
@@ -696,14 +1117,14 @@ LA648:
         lda     $0330
         cmp     #<_new_load
         beq     LA66A ; speeder enabled
-        lda     #$9C
+        lda     #<L059C
         jsr     IECOUT
-        lda     #$05
+        lda     #>L059C
         bne     LA671
 
-LA66A:  lda     #$AF
+LA66A:  lda     #<L05AF
         jsr     IECOUT
-        lda     #$05
+        lda     #>L05AF
 LA671:  jsr     IECOUT
         jsr     UNLSTN
         sei
@@ -895,20 +1316,18 @@ LA7C4:  clc
 ; ??? unused?
 loc_A7C6:
         ldx     #load_ac_indy_end - load_ac_indy - 1
-loc_A7C8:
-        lda     load_ac_indy,x
+:       lda     load_ac_indy,x
         sta     L0110,x
         dex
-        bpl     loc_A7C8
+        bpl     :-
         ldx     #5
         stx     $AB
         jsr     $FB8E ; copy I/O start address to buffer address
         jsr     LA75B
-        bcc     loc_A7E2
+        bcc     :+
         lda     #0
         jmp     _disable_rom
-loc_A7E2:
-        jsr     LA77E
+:       jsr     LA77E
         jsr     turn_screen_off
         jsr     LA999
         lda     SA
@@ -917,23 +1336,21 @@ loc_A7E2:
         dex
         jsr     LA9BB
         ldx     #8
-loc_A7F6:
-        lda     $AC,y
+:       lda     $AC,y
         jsr     LA9BB
         ldx     #6
         iny
         cpy     #5
         nop
-        bne     loc_A7F6
+        bne     :-
         ldy     #0
         ldx     #2
 LA808:  jsr     _load_FNADR_indy
         cpy     $B7
-        bcc     loc_A812
+        bcc     :+
         lda     #$20
         dex
-loc_A812:
-        jsr     LA9BB
+:       jsr     LA9BB
         ldx     #3
         iny
         cpy     #$BB
@@ -948,11 +1365,10 @@ loc_A812:
 LA82B:  jsr     L0110
         ldx     #3 ; used to be "#2" in 1988-05
         inc     $AC
-        bne     loc_A837
+        bne     :+
         inc     $AD
         dex
-loc_A837:
-        lda     $AC
+:       lda     $AC
         cmp     $AE
         lda     $AD
         sbc     $AF

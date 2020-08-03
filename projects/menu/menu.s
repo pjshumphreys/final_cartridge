@@ -258,7 +258,7 @@ startRom:
   lda #$80
   sta $38
 
-  lda #$50 ; no nmi
+  lda #$70 ; no nmi
   jmp $02A9 ;soft reset the machine
 
   ;this is copied to $2a7 and run from there

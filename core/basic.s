@@ -1210,17 +1210,6 @@ MON:    bne     L89BC
         jmp     monitor
 
 ; ----------------------------------------------------------------
-; "BAR" Command - enable/disable pull-down menu
-; ----------------------------------------------------------------
-;BAR:    tax
-;        lda     #0 ; bar off
-;        cpx     #$CC
-;        beq     L89CB ; OFF
-;        lda     #$80 ; bar on
-;L89CB:  sta     bar_flag
-;        jmp     WA8F8
-
-; ----------------------------------------------------------------
 ; "DESKTOP" Command - start Desktop
 ; ----------------------------------------------------------------
 DESKTOP:
@@ -1235,10 +1224,7 @@ L89D8:  lda     $DC00
         beq     L89D8
         cmp     #$59
         beq     L89EC
-L89EC:
-        rts
-
-;L89EC:  jmp     go_desktop
+L89EC:  jmp     go_desktop
 
 print_msg:
         lda     a_are_you_sure,x
