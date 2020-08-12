@@ -36,7 +36,7 @@ OBJECTS=$(SOURCES:.s=.o)
 all: fc3-sl.crt
 
 clean:
-	rm -f core/*.o projects/monitor/*.o projects/speeder/*.o projects/menu/*.o fc3.bin page0.bin page1.bin *.lbl *.prg *.hexdump
+	rm -f core/*.o projects/monitor/*.o projects/speeder/*.o projects/menu/*.o fc3-sl.bin fc3-sl.crt page0.bin page1.bin *.lbl *.prg *.hexdump
 
 test: fc3-sl.bin
 	@dd if=bin/Final_Cartridge_3_1988-12.bin bs=16384 count=1 2> /dev/null | hexdump -C > fc3-orig.bin.hexdump
