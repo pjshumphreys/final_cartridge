@@ -33,14 +33,14 @@ DEPS=core/kernal.i core/persistent.i
 
 OBJECTS=$(SOURCES:.s=.o)
 
-all: fc3.bin
+all: fc3-sl.crt
 
 clean:
 	rm -f core/*.o projects/monitor/*.o projects/speeder/*.o projects/menu/*.o fc3.bin page0.bin page1.bin *.lbl *.prg *.hexdump
 
-test: fc3.bin
+test: fc3-sl.bin
 	@dd if=bin/Final_Cartridge_3_1988-12.bin bs=16384 count=1 2> /dev/null | hexdump -C > fc3-orig.bin.hexdump
-	@hexdump -C fc3.bin > fc3.bin.hexdump
+	@hexdump -C fc3-sl.bin > fc3.bin.hexdump
 	@diff -u fc3-orig.bin.hexdump fc3.bin.hexdump | sort
 
 page0.bin: $(OBJECTS) core/fc3.cfg
@@ -58,8 +58,11 @@ menu.prg: projects/menu/menu.o projects/menu/menu.cfg
 page1.bin: projects/menu/menu.o projects/menu/menu2.cfg
 	$(LD) -Ln menu.lbl -C projects/menu/menu2.cfg projects/menu/menu.o -o $@
 
-fc3.bin: $(OBJECTS) page0.bin page1.bin page2.bin page3.bin
-	cat page0.bin page1.bin page2.bin page3.bin > fc3.bin
+fc3-sl.bin: $(OBJECTS) page0.bin page1.bin page2.bin page3.bin
+	cat page0.bin page1.bin page2.bin page3.bin > fc3-sl.bin
+
+fc3-sl.crt: fc3-sl.bin
+	cartconv -t fc3 -i fc3-sl.bin -o fc3-sl.crt -n "fc3-sl"
 
 %.o: %.s $(DEPS)
 	$(AS) $(ASFLAGS) $< -o $@
